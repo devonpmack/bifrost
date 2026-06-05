@@ -4,7 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdownMenu";
 import { ProviderIconType, RenderProviderIcon } from "@/lib/constants/icons";
-import { getProviderLabel, ProviderName, RequestTypeColors, RequestTypeLabels, Status, StatusBarColors } from "@/lib/constants/logs";
+import {
+	getProviderLabel,
+	mapAppToClientApp,
+	mapUserAgentToApp,
+	ProviderName,
+	RequestTypeColors,
+	RequestTypeLabels,
+	Status,
+	StatusBarColors,
+} from "@/lib/constants/logs";
 import { ChatMessageContent, LogEntry, ResponsesMessageContentBlock } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
@@ -282,6 +291,21 @@ export const createColumns = (
 			},
 		},
 		{
+			id: "app",
+			accessorKey: "app",
+			header: "App",
+			size: 140,
+			cell: ({ row }) => {
+				const app = row.original.app ? mapAppToClientApp(row.original.app) : mapUserAgentToApp(row.original.user_agent);
+				return (
+					<div className="flex min-w-0 items-center gap-2" title={row.original.user_agent || undefined}>
+						{app.icon ? <img src={app.icon} alt={app.name} width={14} height={14} loading="lazy" decoding="async" /> : null}
+						<span className="truncate text-[12px]">{app.name}</span>
+					</div>
+				);
+			},
+		},
+		{
 			accessorKey: "latency",
 			header: ({ column }) => (
 				<Button variant="ghost" data-testid="logs-latency-sort-btn" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -367,9 +391,7 @@ export const createColumns = (
 		},
 	];
 
-	const attributionCell = (value?: string | null) => (
-		<div className="max-w-[180px] truncate font-mono text-xs">{value || "-"}</div>
-	);
+	const attributionCell = (value?: string | null) => <div className="max-w-[180px] truncate font-mono text-xs">{value || "-"}</div>;
 
 	const attributionColumns: ColumnDef<LogEntry>[] = [
 		{
