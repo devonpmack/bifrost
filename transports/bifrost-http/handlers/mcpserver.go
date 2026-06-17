@@ -642,7 +642,7 @@ func (h *MCPServerHandler) getMCPServerForRequest(ctx *fasthttp.RequestCtx) (*mc
 				return nil, fmt.Errorf("virtual key is inactive")
 			}
 			res.jwtVK = vk
-			vkServer, serverErr := h.ensureVKMCPServerByValue(ctx, vk.Value)
+			vkServer, serverErr := h.ensureVKMCPServerByValue(ctx, vk.Value.String())
 			if serverErr != nil {
 				return nil, serverErr
 			}
