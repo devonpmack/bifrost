@@ -10,6 +10,7 @@ Official Helm charts for deploying [Bifrost](https://github.com/maximhq/bifrost)
 
 ### Upcoming [2.1.25]
 
+- Added `bifrost.schemaUrl` to override the generated `config.json` `$schema` location for isolated deployments. It accepts HTTP(S), `file://`, or filesystem paths and is also exported as `BIFROST_SCHEMA_URL` in the pod.
 - Added `evaluation_mode` to guardrail rules in `values.yaml`, `values.schema.json`, `config.schema.json`, and `_helpers.tpl`. The field renders into `guardrails_config.guardrail_rules[].evaluation_mode` and supports `bundled` (default) and `per_turn`.
 
 ### 2.1.24
