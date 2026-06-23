@@ -88,6 +88,7 @@ type Bifrost struct {
 	mcpInitOnce         sync.Once                           // Ensures MCP manager is initialized only once
 	dropExcessRequests  atomic.Bool                         // If true, in cases where the queue is full, requests will not wait for the queue to be empty and will be dropped instead.
 	keySelector         schemas.KeySelector                 // Custom key selector function
+	keyPoolFilter       schemas.KeyPoolFilter               // optional hook to veto keys before selection (nil = all eligible)
 	kvStore             schemas.KVStore                     // optional KV store for session stickiness (nil = disabled)
 }
 
@@ -235,6 +236,7 @@ func Init(ctx context.Context, config schemas.BifrostConfig) (*Bifrost, error) {
 		requestQueues: sync.Map{},
 		waitGroups:    sync.Map{},
 		keySelector:   config.KeySelector,
+		keyPoolFilter: config.KeyPoolFilter,
 		mcpCredStore:  credstore.NewCredStore(config.OAuth2Provider, config.MCPHeadersProvider, config.Logger),
 		logger:        config.Logger,
 		kvStore:       config.KVStore,
@@ -6271,6 +6273,11 @@ func (bifrost *Bifrost) requestWorker(provider schemas.Provider, config *schemas
 								}
 								available = append(available, k)
 							}
+							if bifrost.keyPoolFilter != nil {
+								if filtered, err := bifrost.keyPoolFilter(req.Context, provKey, mdl, available); err == nil {
+									available = filtered
+								}
+							}
 							if len(available) == 0 {
 								// No non-dead keys remain in this cycle. If every key has been
 								// marked permanently dead, give up — retrying won't help.
@@ -6280,6 +6287,11 @@ func (bifrost *Bifrost) requestWorker(provider schemas.Provider, config *schemas
 								for _, k := range pool {
 									if !deadKeyIDs[k.ID] {
 										available = append(available, k)
+									}
+								}
+								if bifrost.keyPoolFilter != nil {
+									if filtered, err := bifrost.keyPoolFilter(req.Context, provKey, mdl, available); err == nil {
+										available = filtered
 									}
 								}
 								if len(available) == 0 {
